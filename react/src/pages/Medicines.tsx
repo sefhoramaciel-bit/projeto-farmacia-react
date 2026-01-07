@@ -575,7 +575,7 @@ const Medicines: React.FC = () => {
               <select
                 value={formData.categoriaId}
                 onChange={(e) => setFormData({ ...formData, categoriaId: e.target.value })}
-                className="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-200 p-2.5 text-gray-900"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-200 py-3 px-4 text-gray-900"
                 required
               >
                 <option value="">Selecione uma categoria</option>
@@ -605,7 +605,7 @@ const Medicines: React.FC = () => {
               onChange={onImageSelected}
               accept="image/jpeg,image/jpg,image/png,image/webp"
               multiple
-              className="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-200 focus:outline-none focus:border-indigo-500"
+              className="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-md cursor-pointer bg-gray-200 focus:outline-none focus:border-indigo-500 py-3 px-4"
             />
             <p className="mt-1 text-xs text-gray-500">Selecione entre 1 e 3 imagens (JPG, PNG ou WebP, máx 5MB cada)</p>
             

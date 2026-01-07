@@ -1,5 +1,7 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuthStore } from './services/auth';
+import { notificationService } from './services/notification';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Home from './pages/Home';
@@ -19,13 +21,29 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { currentUser, isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    
+    if (currentUser?.role !== 'ADMIN') {
+      notificationService.error(
+        'Acesso Negado',
+        'Você não tem permissão para acessar esta página. Apenas administradores podem realizar esta ação.'
+      );
+      navigate('/inicio', { replace: true });
+    }
+  }, [currentUser, isAuthenticated, navigate]);
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return null;
   }
   
   if (currentUser?.role !== 'ADMIN') {
-    return <Navigate to="/inicio" replace />;
+    return null;
   }
   
   return <>{children}</>;
