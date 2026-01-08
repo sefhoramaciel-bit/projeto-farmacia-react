@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,6 +27,17 @@ public class ImageService {
     private static final List<String> ALLOWED_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp");
     private static final int MIN_IMAGES = 1;
     private static final int MAX_IMAGES = 3;
+    
+    /**
+     * Retorna o caminho absoluto do diretório de uploads.
+     * Se uploadDir for relativo, usa a pasta do usuário (~/farmacia-uploads)
+     */
+    private String getAbsoluteUploadDir() {
+        File uploadDirectory = new File(uploadDir);
+        return uploadDirectory.isAbsolute() 
+            ? uploadDir 
+            : Paths.get(System.getProperty("user.home"), "farmacia-uploads").toString();
+    }
 
     public List<String> uploadMedicamentoImages(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {

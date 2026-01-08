@@ -97,13 +97,23 @@ const Layout: React.FC = () => {
 
   const getAvatarUrl = (): string | null => {
     if (!currentUser || !currentUser.avatarUrl) {
+      console.log('🖼️ Avatar: Sem usuário ou sem avatarUrl');
       return null;
     }
     if (currentUser.avatarUrl.startsWith('http')) {
+      console.log('🖼️ Avatar: URL absoluta:', currentUser.avatarUrl);
       return currentUser.avatarUrl;
     }
     const baseUrl = environment.apiUrl.replace('/api', '');
-    return `${baseUrl}${currentUser.avatarUrl}`;
+    // Adiciona timestamp para evitar cache
+    const cacheBuster = new Date().getTime();
+    const fullUrl = `${baseUrl}${currentUser.avatarUrl}?t=${cacheBuster}`;
+    console.log('🖼️ Avatar construído:', {
+      avatarUrl: currentUser.avatarUrl,
+      baseUrl,
+      fullUrl
+    });
+    return fullUrl;
   };
 
   return (

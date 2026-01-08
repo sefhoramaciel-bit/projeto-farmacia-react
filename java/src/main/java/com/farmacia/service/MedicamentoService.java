@@ -109,11 +109,21 @@ public class MedicamentoService {
         
         // Atualiza alertas após criar um novo medicamento
         System.out.println("💊 MedicamentoService: Medicamento criado, atualizando alertas...");
-        System.out.println("💊 MedicamentoService: Chamando gerarAlertasManual()...");
-        alertaService.gerarAlertasManual();
+        alertaService.verificarEstoqueBaixo();
+        alertaService.verificarValidadeProxima();
+        alertaService.verificarMedicamentosVencidos();
         System.out.println("💊 MedicamentoService: Alertas atualizados");
         System.out.println("💊 MedicamentoService.create() - ALERTAS PROCESSADOS");
         System.out.println("═══════════════════════════════════════════════════════════════════════════════");
+        
+        // Registra log de criação com data
+        LocalDateTime dataHora = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        String dataFormatada = dataHora.format(formatter);
+        String detalhes = String.format("{\"nome\":\"%s\",\"preco\":%.2f,\"quantidadeEstoque\":%d,\"ativo\":%s,\"data\":\"%s\"}", 
+                medicamento.getNome(), medicamento.getPreco(), medicamento.getQuantidadeEstoque(), medicamento.getAtivo(), dataFormatada);
+        logService.registrarLog("CREATE", "MEDICAMENTO", medicamento.getId(), 
+                "Medicamento criado: " + medicamento.getNome(), detalhes);
         
         return toResponse(medicamento);
     }
@@ -175,8 +185,10 @@ public class MedicamentoService {
             System.out.println("💊 MedicamentoService: Medicamento REATIVADO, removendo alertas antigos e regenerando...");
             System.out.println("💊 MedicamentoService: Chamando removerTodosAlertasDoMedicamento(" + id + ")...");
             alertaService.removerTodosAlertasDoMedicamento(id);
-            System.out.println("💊 MedicamentoService: Alertas antigos removidos, chamando gerarAlertasManual()...");
-            alertaService.gerarAlertasManual();
+            System.out.println("💊 MedicamentoService: Alertas antigos removidos, atualizando alertas...");
+            alertaService.verificarEstoqueBaixo();
+            alertaService.verificarValidadeProxima();
+            alertaService.verificarMedicamentosVencidos();
             System.out.println("💊 MedicamentoService: Alertas regenerados");
         }
         System.out.println("💊 MedicamentoService.updateStatus() - ALERTAS PROCESSADOS");
@@ -274,8 +286,9 @@ public class MedicamentoService {
         
         // Atualiza alertas após atualizar um medicamento
         System.out.println("💊 MedicamentoService: Medicamento atualizado, atualizando alertas...");
-        System.out.println("💊 MedicamentoService: Chamando gerarAlertasManual()...");
-        alertaService.gerarAlertasManual();
+        alertaService.verificarEstoqueBaixo();
+        alertaService.verificarValidadeProxima();
+        alertaService.verificarMedicamentosVencidos();
         System.out.println("💊 MedicamentoService: Alertas atualizados");
         System.out.println("💊 MedicamentoService.update() - ALERTAS PROCESSADOS");
         System.out.println("═══════════════════════════════════════════════════════════════════════════════");

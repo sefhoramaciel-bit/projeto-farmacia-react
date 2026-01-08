@@ -31,15 +31,27 @@ const Medicines: React.FC = () => {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [viewingSpecificMedicine, setViewingSpecificMedicine] = useState(false);
+  const [specificMedicineId, setSpecificMedicineId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadMedicines();
+    // Verificar se veio de um alerta com ID específico
+    const medicineIdFromState = location.state?.id;
+    if (medicineIdFromState) {
+      setSpecificMedicineId(medicineIdFromState);
+      setViewingSpecificMedicine(true);
+      loadSpecificMedicine(medicineIdFromState);
+    } else {
+      loadMedicines();
+    }
     loadCategories();
-  }, [activeTab]);
+  }, [activeTab, location.state]);
 
   useEffect(() => {
-    applySearchFilter();
-  }, [searchTerm, medicines]);
+    if (!viewingSpecificMedicine) {
+      applySearchFilter();
+    }
+  }, [searchTerm, medicines, viewingSpecificMedicine]);
 
   const loadMedicines = async () => {
     setIsLoading(true);
@@ -57,6 +69,33 @@ const Medicines: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadSpecificMedicine = async (medicineId: string) => {
+    setIsLoading(true);
+    try {
+      const medicine = await medicinesService.getById(medicineId);
+      setMedicines([medicine]);
+      setFilteredMedicines([medicine]);
+      // Ajustar a aba baseado no status do medicamento
+      setActiveTab(medicine.ativo ? 'active' : 'inactive');
+    } catch (err: any) {
+      console.error('Error loading specific medicine:', err);
+      notificationService.error('Erro', 'Não foi possível carregar o medicamento.');
+      // Em caso de erro, voltar para listagem completa
+      setViewingSpecificMedicine(false);
+      setSpecificMedicineId(null);
+      loadMedicines();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const voltarParaListagemCompleta = () => {
+    setViewingSpecificMedicine(false);
+    setSpecificMedicineId(null);
+    setSearchTerm('');
+    loadMedicines();
   };
 
   const loadCategories = async () => {
@@ -300,19 +339,6 @@ const Medicines: React.FC = () => {
     return tomorrow.toISOString().split('T')[0];
   };
 
-  const getShortId = (id: string): string => {
-    if (!id) return '-';
-    return id.substring(0, 8) + '...';
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      notificationService.success('Copiado!', 'ID copiado para a área de transferência.');
-    }).catch(() => {
-      notificationService.error('Erro', 'Não foi possível copiar o ID.');
-    });
-  };
-
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
@@ -332,7 +358,7 @@ const Medicines: React.FC = () => {
             Adicione, edite e organize os medicamentos da farmácia.
           </p>
         </div>
-        {isAdmin() && (
+        {isAdmin() && !viewingSpecificMedicine && (
           <button
             onClick={openCreateModal}
             className="mt-4 md:mt-0 flex items-center px-6 py-3 text-white font-semibold rounded-lg shadow-md bg-gradient-to-r from-[#2D3345] to-[#4A5568] hover:scale-105 transform transition-transform duration-300"
@@ -346,6 +372,7 @@ const Medicines: React.FC = () => {
       </header>
 
       {/* Tabs */}
+      {!viewingSpecificMedicine && (
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
           <button
@@ -366,13 +393,15 @@ const Medicines: React.FC = () => {
                 : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Inativos
-          </button>
-        </nav>
-      </div>
+          Inativos
+        </button>
+      </nav>
+    </div>
+      )}
 
-      {/* Search Bar */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm p-4">
+    {/* Search Bar */}
+    {!viewingSpecificMedicine && (
+    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm p-4">
         <div className="relative">
           <input
             type="text"
@@ -384,13 +413,14 @@ const Medicines: React.FC = () => {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-        </div>
+        </svg>
       </div>
+    </div>
+  </div>
+    )}
 
-      {/* Table */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden">
+  {/* Table */}
+  <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-gray-500">Carregando medicamentos...</div>
         ) : (
@@ -418,12 +448,24 @@ const Medicines: React.FC = () => {
                 ) : (
                   filteredMedicines.map((med) => (
                     <tr key={med.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div
-                          className="text-sm text-gray-600 font-mono cursor-pointer group relative inline-block"
-                          onClick={() => copyToClipboard(med.id)}
-                        >
-                          <span className="hover:text-gray-900 transition-colors">{getShortId(med.id)}</span>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <div className="group relative flex items-center">
+                          <span className="font-mono text-xs">{med.id.substring(0, 8)}...</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(med.id);
+                              notificationService.success('ID Copiado!', 'O ID foi copiado para a área de transferência.');
+                            }}
+                            className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                            title="Copiar ID completo"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                          <div className="hidden group-hover:block absolute left-0 bottom-full mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-10">
+                            {med.id}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

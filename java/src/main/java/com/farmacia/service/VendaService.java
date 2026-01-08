@@ -148,9 +148,11 @@ public class VendaService {
         
         StringBuilder detalhesJson = new StringBuilder();
         detalhesJson.append("{");
+        detalhesJson.append("\"clienteId\":\"").append(cliente.getId()).append("\",");
+        detalhesJson.append("\"clienteNome\":\"").append(cliente.getNome().replace("\"", "\\\"")).append("\",");
+        detalhesJson.append("\"clienteCpf\":\"").append(cliente.getCpf()).append("\",");
         detalhesJson.append("\"status\":\"").append(venda.getStatus()).append("\",");
         detalhesJson.append("\"valorTotal\":").append(venda.getValorTotal()).append(",");
-        detalhesJson.append("\"clienteId\":\"").append(venda.getClienteId()).append("\",");
         detalhesJson.append("\"data\":\"").append(dataFormatada).append("\",");
         detalhesJson.append("\"itens\":[");
         
@@ -230,12 +232,16 @@ public class VendaService {
         venda.setStatus(StatusVenda.CANCELADA);
         vendaRepository.save(venda);
         
+        // Busca cliente para incluir informações no log
+        Cliente clienteVenda = clienteRepository.findById(venda.getClienteId())
+                .orElseThrow(() -> new BusinessException("Cliente não encontrado"));
+        
         // Registra log com data
         LocalDateTime dataHora = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         String dataFormatada = dataHora.format(formatter);
-        String detalhes = String.format("{\"status\":\"%s\",\"vendaId\":\"%s\",\"valorTotal\":%.2f,\"clienteId\":\"%s\",\"data\":\"%s\"}", 
-                venda.getStatus(), id, venda.getValorTotal(), venda.getClienteId(), dataFormatada);
+        String detalhes = String.format("{\"clienteId\":\"%s\",\"clienteNome\":\"%s\",\"clienteCpf\":\"%s\",\"status\":\"%s\",\"vendaId\":\"%s\",\"valorTotal\":%.2f,\"dataHora\":\"%s\"}", 
+                clienteVenda.getId(), clienteVenda.getNome(), clienteVenda.getCpf(), venda.getStatus(), id, venda.getValorTotal(), dataFormatada);
         logService.registrarLog("UPDATE", "VENDA", venda.getId(), 
                 String.format("Venda #%s cancelada. Estoque estornado.", id), detalhes);
         
@@ -306,9 +312,11 @@ public class VendaService {
         
         StringBuilder detalhesJson = new StringBuilder();
         detalhesJson.append("{");
+        detalhesJson.append("\"clienteId\":\"").append(cliente.getId()).append("\",");
+        detalhesJson.append("\"clienteNome\":\"").append(cliente.getNome().replace("\"", "\\\"")).append("\",");
+        detalhesJson.append("\"clienteCpf\":\"").append(cliente.getCpf()).append("\",");
         detalhesJson.append("\"status\":\"").append(venda.getStatus()).append("\",");
         detalhesJson.append("\"valorTotal\":").append(venda.getValorTotal()).append(",");
-        detalhesJson.append("\"clienteId\":\"").append(venda.getClienteId()).append("\",");
         detalhesJson.append("\"data\":\"").append(dataFormatada).append("\",");
         detalhesJson.append("\"itens\":[");
         

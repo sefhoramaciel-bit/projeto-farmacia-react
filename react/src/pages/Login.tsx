@@ -32,26 +32,48 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('📋 handleSubmit chamado');
 
     if (!validate()) {
+      console.log('⚠️ Validação falhou');
       notificationService.error('Formulário Inválido', 'Por favor, preencha todos os campos corretamente.');
       return;
     }
 
+    console.log('✅ Validação OK - iniciando login');
     setIsLoading(true);
     try {
+      console.log('🔑 Tentando login com email:', formData.email);
       const response = await login(formData.email, formData.password);
+      console.log('✅ Login bem-sucedido:', response);
       if (response?.usuario) {
         notificationService.success('Login bem-sucedido!', `Bem-vindo, ${response.usuario.nome}!`);
         navigate('/inicio');
       }
     } catch (err: any) {
+      console.log('🟥🟥🟥 CATCH DO LOGIN ACIONADO! 🟥🟥🟥');
+      console.error('❌ ERRO CAPTURADO NO LOGIN:', err);
+      console.error('❌ Detalhes do erro:', {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        message: err.message,
+        hasResponse: !!err.response
+      });
+      
+      console.log('🔔 MOSTRANDO ALERTA AGORA...');
+      
+      // SEMPRE mostra um alerta, independente do erro
       if (err.response?.status === 401 || err.response?.status === 403) {
-        notificationService.error('Erro de Autenticação', 'Login ou Senha Não Identificados!');
+        console.log('🚫 Erro 401/403 - Mostrando alerta de autenticação');
+        notificationService.error('Erro de Autenticação', 'Email ou Senha Incorretos!');
+      } else if (err.response) {
+        console.log('⚠️ Erro com response - Mostrando alerta de servidor');
+        notificationService.error('Erro no Servidor', `Erro ${err.response.status}: ${err.response.statusText || 'Não foi possível fazer login.'}`);
       } else {
-        notificationService.error('Erro no Servidor', 'Não foi possível conectar ao servidor. Tente novamente mais tarde.');
+        console.log('⚠️ Erro sem response - Mostrando alerta de conexão');
+        notificationService.error('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua conexão.');
       }
-      console.error('Login error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -60,18 +82,18 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div
-        className="w-full max-w-md backdrop-blur-sm rounded-2xl shadow-2xl p-8 space-y-6 transform hover:scale-[1.02] transition-transform duration-500"
+        className="w-full max-w-md backdrop-blur-sm rounded-2xl shadow-2xl px-10 py-12 space-y-8 transform hover:scale-[1.02] transition-transform duration-500"
         style={{ background: '#2D3345' }}
       >
         <div className="text-center">
-          <img className="mx-auto h-20 w-auto" src="/src/assets/logo.png" alt="Grupo DPSP Logo" onError={(e) => {
+          <img className="mx-auto h-24 w-auto" src="/src/assets/logo.png" alt="Grupo DPSP Logo" onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
           }} />
-          <h2 className="mt-4 text-3xl font-extrabold text-[#99E0FF] drop-shadow-md"></h2>
-          <p className="mt-2 text-sm text-white/90">Bem-vindo de volta!</p>
+          <h2 className="mt-6 text-3xl font-extrabold text-[#99E0FF] drop-shadow-md"></h2>
+          <p className="mt-3 text-base text-white/90">Bem-vindo de volta!</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email-address" className="sr-only">Email</label>
@@ -81,7 +103,7 @@ const Login: React.FC = () => {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border-2 border-gray-300/60 bg-white/90 placeholder-gray-500 text-gray-900 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-[#99E0FF]/50 focus:border-[#99E0FF] focus:z-10 sm:text-sm transition-all duration-300"
+                className="appearance-none rounded-none relative block w-full px-4 py-4 border-2 border-[#2D3345] bg-white/90 placeholder-gray-500 text-gray-900 rounded-t-lg focus:outline-none focus:ring-2 focus:ring-[#99E0FF]/50 focus:border-[#99E0FF] focus:z-10 sm:text-base transition-all duration-300"
                 placeholder="Email"
               />
               {errors.email && (
@@ -96,7 +118,7 @@ const Login: React.FC = () => {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border-2 border-gray-300/60 bg-white/90 placeholder-gray-500 text-gray-900 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-[#99E0FF]/50 focus:border-[#99E0FF] focus:z-10 sm:text-sm transition-all duration-300"
+                className="appearance-none rounded-none relative block w-full px-4 py-4 border-2 border-[#2D3345] bg-white/90 placeholder-gray-500 text-gray-900 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-[#99E0FF]/50 focus:border-[#99E0FF] focus:z-10 sm:text-base transition-all duration-300"
                 placeholder="Senha"
               />
               {errors.password && (
@@ -109,7 +131,7 @@ const Login: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-[#2D3345] bg-[#99E0FF]/90 hover:bg-[#99E0FF] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#99E0FF]/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-base font-bold rounded-lg text-[#2D3345] bg-[#99E0FF]/90 hover:bg-[#99E0FF] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#99E0FF]/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
               {isLoading ? (
                 <>

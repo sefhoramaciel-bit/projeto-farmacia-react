@@ -55,7 +55,7 @@ logging:
 
 app:
   upload:
-    dir: uploads
+    dir: ${user.dir}/uploads
     max-size: 5242880  # 5MB em bytes
 
 

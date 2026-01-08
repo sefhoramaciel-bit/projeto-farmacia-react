@@ -76,6 +76,24 @@ const Logs: React.FC = () => {
       try {
         const detalhes = JSON.parse(log.detalhes);
         const partes: string[] = [];
+        
+        // Informações do cliente
+        if (detalhes.clienteId !== undefined) {
+          partes.push(`Cliente ID: ${detalhes.clienteId}`);
+        }
+        if (detalhes.clienteNome !== undefined) {
+          partes.push(`Cliente: ${detalhes.clienteNome}`);
+        }
+        if (detalhes.clienteCpf !== undefined) {
+          partes.push(`CPF: ${detalhes.clienteCpf}`);
+        }
+        
+        // Data e hora
+        if (detalhes.data !== undefined) {
+          partes.push(`Data/Hora: ${detalhes.data}`);
+        }
+        
+        // Status
         if (detalhes.status !== undefined) {
           const statusMap: { [key: string]: string } = {
             'CONCLUIDA': 'Concluída',
@@ -84,9 +102,13 @@ const Logs: React.FC = () => {
           };
           partes.push(`Status: ${statusMap[detalhes.status] || detalhes.status}`);
         }
+        
+        // Valor total
         if (detalhes.valorTotal !== undefined) {
           partes.push(`Valor Total: R$ ${Number(detalhes.valorTotal).toFixed(2).replace('.', ',')}`);
         }
+        
+        // Itens da venda
         if (detalhes.itens && Array.isArray(detalhes.itens) && detalhes.itens.length > 0) {
           detalhes.itens.forEach((item: any, index: number) => {
             if (index > 0) partes.push('');

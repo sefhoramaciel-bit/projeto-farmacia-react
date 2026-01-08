@@ -45,7 +45,11 @@ const Sales: React.FC = () => {
     hoje.setHours(0, 0, 0, 0);
 
     return medicines.filter(med => {
+      // Filtra medicamentos inativos
       if (!med.ativo) return false;
+
+      // Filtra medicamentos com estoque menor que 1
+      if (med.quantidadeEstoque < 1) return false;
 
       if (med.validade) {
         try {

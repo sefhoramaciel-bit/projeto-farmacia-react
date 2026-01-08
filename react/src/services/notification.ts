@@ -11,24 +11,24 @@ class NotificationService {
     buttonsStyling: false,
   });
 
-  success(title: string, text: string): void {
-    this.swal.fire({
+  success(title: string, text: string): Promise<SweetAlertResult> {
+    console.log(`Success: ${title} - ${text}`);
+    return this.swal.fire({
       icon: 'success',
       title,
       text,
       background: 'radial-gradient(circle, #f0f9ff 0%, #99E0FF 100%)',
     });
-    console.log(`Success: ${title} - ${text}`);
   }
 
-  error(title: string, text?: string): void {
-    this.swal.fire({
+  error(title: string, text?: string): Promise<SweetAlertResult> {
+    console.error(`Error: ${title} - ${text || ''}`);
+    return this.swal.fire({
       icon: 'error',
       title,
       text: text || '',
       background: 'radial-gradient(circle, #ffebee 0%, #ef9a9a 100%)',
     });
-    console.error(`Error: ${title} - ${text || ''}`);
   }
 
   confirm(

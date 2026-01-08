@@ -41,23 +41,6 @@ public class AlertaService {
     }
 
     @Transactional
-    public void gerarAlertasManual() {
-        System.out.println("═══════════════════════════════════════════════════════════════════════════════");
-        System.out.println("🔔 AlertaService.gerarAlertasManual() - INÍCIO");
-        System.out.println("🔔 Chamando verificarEstoqueBaixo()...");
-        verificarEstoqueBaixo();
-        System.out.println("🔔 verificarEstoqueBaixo() concluído");
-        System.out.println("🔔 Chamando verificarValidadeProxima()...");
-        verificarValidadeProxima();
-        System.out.println("🔔 verificarValidadeProxima() concluído");
-        System.out.println("🔔 Chamando verificarMedicamentosVencidos()...");
-        verificarMedicamentosVencidos();
-        System.out.println("🔔 verificarMedicamentosVencidos() concluído");
-        System.out.println("🔔 AlertaService.gerarAlertasManual() - FIM");
-        System.out.println("═══════════════════════════════════════════════════════════════════════════════");
-    }
-
-    @Transactional
     public void verificarEstoqueBaixo() {
         System.out.println("═══════════════════════════════════════════════════════════════════════════════");
         System.out.println("🔔 AlertaService.verificarEstoqueBaixo() - INÍCIO");
@@ -101,9 +84,17 @@ public class AlertaService {
                 .filter(m -> m.getQuantidadeEstoque() < LIMITE_ESTOQUE_BAIXO)
                 .collect(Collectors.toList());
         System.out.println("🔔 Medicamentos com estoque < " + LIMITE_ESTOQUE_BAIXO + ": " + medicamentos.size());
+        
+        // Log específico para medicamentos com estoque muito baixo
+        long medicamentosZeroOuUm = medicamentos.stream()
+                .filter(m -> m.getQuantidadeEstoque() <= 1)
+                .count();
+        System.out.println("🔔 ⚠️ ATENÇÃO: " + medicamentosZeroOuUm + " medicamento(s) com estoque <= 1 unidade!");
 
         for (Medicamento medicamento : medicamentos) {
-            System.out.println("🔔 Verificando medicamento: " + medicamento.getNome() + " (Estoque: " + medicamento.getQuantidadeEstoque() + ")");
+            String estoqueStatus = medicamento.getQuantidadeEstoque() == 0 ? " ⚠️ ZERADO!" : 
+                                  medicamento.getQuantidadeEstoque() == 1 ? " ⚠️ CRÍTICO!" : "";
+            System.out.println("🔔 Verificando medicamento: " + medicamento.getNome() + " (Estoque: " + medicamento.getQuantidadeEstoque() + ")" + estoqueStatus);
             // Verifica se já existe alerta NÃO LIDO para este medicamento e tipo
             List<Alerta> todosAlertasMedicamento = alertaRepository.findByMedicamentoId(medicamento.getId());
             boolean existeAlertaNaoLido = todosAlertasMedicamento.stream()
@@ -115,20 +106,42 @@ public class AlertaService {
             }
             System.out.println("🔔   Existe alerta ESTOQUE_BAIXO NÃO LIDO? " + existeAlertaNaoLido);
 
-            if (!existeAlertaNaoLido) {
+            // Gera mensagem atualizada baseada no estoque atual
+            String mensagemAtualizada = medicamento.getQuantidadeEstoque() == 0 
+                ? "⚠️ ZERADO! Nenhuma unidade disponível."
+                : medicamento.getQuantidadeEstoque() == 1
+                ? "⚠️ CRÍTICO! Apenas 1 unidade disponível."
+                : "Estoque baixo: " + medicamento.getQuantidadeEstoque() + " un.";
+
+            if (existeAlertaNaoLido) {
+                // ATUALIZA o alerta existente se a mensagem mudou
+                Alerta alertaExistente = todosAlertasMedicamento.stream()
+                    .filter(a -> "ESTOQUE_BAIXO".equals(a.getTipo()) && !a.getLido())
+                    .findFirst()
+                    .orElse(null);
+                
+                if (alertaExistente != null && !mensagemAtualizada.equals(alertaExistente.getMensagem())) {
+                    System.out.println("🔔   🔄 ATUALIZANDO alerta existente para: " + medicamento.getNome());
+                    System.out.println("🔔     Mensagem ANTIGA: " + alertaExistente.getMensagem());
+                    System.out.println("🔔     Mensagem NOVA: " + mensagemAtualizada);
+                    alertaExistente.setMensagem(mensagemAtualizada);
+                    alertaRepository.save(alertaExistente);
+                    alertaRepository.flush();
+                    System.out.println("🔔     ✅ Alerta atualizado e salvo!");
+                } else if (alertaExistente != null) {
+                    System.out.println("🔔   ℹ️ Alerta já existe e está atualizado: " + alertaExistente.getMensagem());
+                }
+            } else {
                 // Cria novo alerta se NÃO existe alerta não lido
-                // Isso permite que novos alertas sejam criados mesmo se já existiu um alerta lido anteriormente
                 System.out.println("🔔   ✅ Criando NOVO alerta para: " + medicamento.getNome());
                 Alerta alerta = new Alerta();
                 alerta.setMedicamentoId(medicamento.getId());
                 alerta.setMedicamentoNome(medicamento.getNome());
                 alerta.setTipo("ESTOQUE_BAIXO");
-                alerta.setMensagem("Estoque baixo: " + medicamento.getQuantidadeEstoque() + " un.");
+                alerta.setMensagem(mensagemAtualizada);
                 alerta.setLido(false);
                 alertaRepository.save(alerta);
                 System.out.println("🔔   ✅ Novo alerta criado - ID: " + alerta.getId() + ", Lido: " + alerta.getLido());
-            } else {
-                System.out.println("🔔   ⚠️ Já existe alerta ESTOQUE_BAIXO não lido para " + medicamento.getNome() + ", NÃO criando novo alerta");
             }
         }
         System.out.println("🔔 AlertaService.verificarEstoqueBaixo() - FIM");
@@ -300,10 +313,16 @@ public class AlertaService {
         return response;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AlertaResponse> findEstoqueBaixo() {
         System.out.println("═══════════════════════════════════════════════════════════════════════════════");
         System.out.println("🔔 AlertaService.findEstoqueBaixo() - INÍCIO");
+        
+        // Verifica e atualiza alertas ANTES de buscar
+        System.out.println("🔔 Verificando alertas de estoque baixo...");
+        verificarEstoqueBaixo();
+        System.out.println("🔔 Verificação concluída");
+        
         List<Alerta> alertasNaoLidos = alertaRepository.findByTipoAndLidoFalse("ESTOQUE_BAIXO");
         System.out.println("🔔 Total de alertas ESTOQUE_BAIXO não lidos encontrados: " + alertasNaoLidos.size());
         
@@ -507,6 +526,55 @@ public class AlertaService {
         System.out.println("🔔 ✅ Total de " + alertasMarcados + " alerta(s) marcado(s) como lido(s) com sucesso");
         System.out.println("🔔 AlertaService.marcarTodosAlertasComoLidos() - FIM");
         System.out.println("═══════════════════════════════════════════════════════════════════════════════");
+    }
+
+    /**
+     * Método de debug para verificar medicamentos com estoque baixo e alertas criados
+     */
+    public String debugEstoqueBaixo() {
+        StringBuilder debug = new StringBuilder();
+        debug.append("=== DEBUG: ALERTAS DE ESTOQUE BAIXO ===\n\n");
+        debug.append("LIMITE_ESTOQUE_BAIXO: ").append(LIMITE_ESTOQUE_BAIXO).append("\n\n");
+        
+        List<Medicamento> todosMedicamentos = medicamentoRepository.findByAtivoTrue();
+        debug.append("Total de medicamentos ativos: ").append(todosMedicamentos.size()).append("\n\n");
+        
+        List<Medicamento> medicamentosBaixoEstoque = todosMedicamentos.stream()
+                .filter(m -> m.getQuantidadeEstoque() < LIMITE_ESTOQUE_BAIXO)
+                .collect(Collectors.toList());
+        
+        debug.append("Medicamentos com estoque < ").append(LIMITE_ESTOQUE_BAIXO).append(": ").append(medicamentosBaixoEstoque.size()).append("\n\n");
+        
+        for (Medicamento med : medicamentosBaixoEstoque) {
+            debug.append("---\n");
+            debug.append("Medicamento: ").append(med.getNome()).append("\n");
+            debug.append("  ID: ").append(med.getId()).append("\n");
+            debug.append("  Estoque: ").append(med.getQuantidadeEstoque()).append("\n");
+            debug.append("  Ativo: ").append(med.getAtivo()).append("\n");
+            
+            List<Alerta> alertas = alertaRepository.findByMedicamentoId(med.getId());
+            debug.append("  Alertas existentes: ").append(alertas.size()).append("\n");
+            
+            if (alertas.isEmpty()) {
+                debug.append("  ⚠️ NENHUM ALERTA CRIADO!\n");
+            } else {
+                for (Alerta alerta : alertas) {
+                    debug.append("    - Tipo: ").append(alerta.getTipo())
+                         .append(", Lido: ").append(alerta.getLido())
+                         .append(", Mensagem: ").append(alerta.getMensagem())
+                         .append(", ID: ").append(alerta.getId()).append("\n");
+                }
+            }
+            debug.append("\n");
+        }
+        
+        List<Alerta> alertasEstoqueBaixo = alertaRepository.findByTipo("ESTOQUE_BAIXO");
+        debug.append("---\n");
+        debug.append("Total de alertas ESTOQUE_BAIXO no banco: ").append(alertasEstoqueBaixo.size()).append("\n");
+        debug.append("  - Não lidos: ").append(alertasEstoqueBaixo.stream().filter(a -> !a.getLido()).count()).append("\n");
+        debug.append("  - Lidos: ").append(alertasEstoqueBaixo.stream().filter(Alerta::getLido).count()).append("\n");
+        
+        return debug.toString();
     }
 
     private AlertaResponse toResponse(Alerta alerta) {

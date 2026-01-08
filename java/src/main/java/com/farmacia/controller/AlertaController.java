@@ -63,12 +63,13 @@ public class AlertaController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/gerar")
-    @Operation(summary = "Gerar alertas manualmente", description = "Força a geração de alertas de estoque baixo e validade (ADMIN e VENDEDOR)")
-    public ResponseEntity<String> gerarAlertas() {
-        alertaService.gerarAlertasManual();
-        return ResponseEntity.ok("Alertas gerados com sucesso");
+    @GetMapping("/debug/estoque-baixo")
+    @Operation(summary = "DEBUG: Listar medicamentos com estoque baixo", description = "Retorna detalhes de medicamentos com estoque baixo para debug")
+    public ResponseEntity<String> debugEstoqueBaixo() {
+        String debugInfo = alertaService.debugEstoqueBaixo();
+        return ResponseEntity.ok(debugInfo);
     }
+
 }
 
 

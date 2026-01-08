@@ -12,6 +12,7 @@ public interface AlertaRepository extends JpaRepository<Alerta, UUID> {
     List<Alerta> findByLidoFalse();
     List<Alerta> findByMedicamentoId(UUID medicamentoId);
     List<Alerta> findByTipoAndLidoFalse(String tipo);
+    List<Alerta> findByTipo(String tipo);
 }
 
 

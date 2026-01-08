@@ -32,11 +32,24 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    console.log('🔴 INTERCEPTOR: Erro capturado', {
+      status: error.response?.status,
+      url: error.config?.url,
+      isLoginEndpoint: error.config?.url?.includes('/auth/login')
+    });
+    
+    // Não redireciona se o erro 401 for no próprio endpoint de login
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+      console.log('🚫 401 em endpoint autenticado - redirecionando para login');
       localStorage.removeItem('jwt_token');
       localStorage.removeItem('currentUser_enc');
       window.location.href = '/login';
+    } else if (error.response?.status === 401 && error.config?.url?.includes('/auth/login')) {
+      console.log('🚫 401 no login - NÃO redirecionando, deixando componente tratar');
+      console.log('🔴 INTERCEPTOR: Propagando erro para o componente...');
     }
+    
+    console.log('🔴 INTERCEPTOR: Promise.reject será chamado agora');
     return Promise.reject(error);
   }
 );

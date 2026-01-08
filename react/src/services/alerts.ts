@@ -27,11 +27,6 @@ export const alertsService = {
     return response.data;
   },
 
-  gerarAlertas: async (): Promise<string> => {
-    const response = await api.post('/alertas/gerar', {}, { responseType: 'text' });
-    return response.data;
-  },
-
   marcarComoLido: async (id: string): Promise<Alert> => {
     const response = await api.put<Alert>(`/alertas/${id}/ler`, {});
     return response.data;

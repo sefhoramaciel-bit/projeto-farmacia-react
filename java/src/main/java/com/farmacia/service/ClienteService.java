@@ -68,6 +68,16 @@ public class ClienteService {
         cliente.setDataNascimento(request.getDataNascimento());
 
         cliente = clienteRepository.save(cliente);
+        
+        // Registra log de criação
+        LocalDateTime dataHora = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        String dataFormatada = dataHora.format(formatter);
+        String detalhes = String.format("{\"nome\":\"%s\",\"cpf\":\"%s\",\"email\":\"%s\",\"data\":\"%s\"}", 
+                nomeTrimmed, cpfTrimmed, emailTrimmed, dataFormatada);
+        logService.registrarLog("CREATE", "CLIENTE", cliente.getId(), 
+                "Cliente criado: " + nomeTrimmed, detalhes);
+        
         return toResponse(cliente);
     }
 
@@ -132,6 +142,16 @@ public class ClienteService {
         cliente.setDataNascimento(request.getDataNascimento());
 
         cliente = clienteRepository.save(cliente);
+        
+        // Registra log de atualização
+        LocalDateTime dataHora = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        String dataFormatada = dataHora.format(formatter);
+        String detalhes = String.format("{\"nome\":\"%s\",\"cpf\":\"%s\",\"email\":\"%s\",\"data\":\"%s\"}", 
+                nomeTrimmed, cpfTrimmed, emailTrimmed, dataFormatada);
+        logService.registrarLog("UPDATE", "CLIENTE", cliente.getId(), 
+                "Cliente atualizado: " + nomeTrimmed, detalhes);
+        
         return toResponse(cliente);
     }
 

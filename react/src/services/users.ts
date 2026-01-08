@@ -20,13 +20,23 @@ export const usersService = {
     return response.data;
   },
 
-  create: async (user: UserRequest): Promise<User> => {
-    const response = await api.post<User>('/usuarios', user);
+  create: async (user: UserRequest, avatarFile?: File): Promise<User> => {
+    const formData = new FormData();
+    formData.append('usuario', JSON.stringify(user));
+    if (avatarFile) {
+      formData.append('avatar', avatarFile);
+    }
+    const response = await api.post<User>('/usuarios', formData);
     return response.data;
   },
 
-  update: async (id: string, user: UserRequest): Promise<User> => {
-    const response = await api.put<User>(`/usuarios/${id}`, user);
+  update: async (id: string, user: UserRequest, avatarFile?: File): Promise<User> => {
+    const formData = new FormData();
+    formData.append('usuario', JSON.stringify(user));
+    if (avatarFile) {
+      formData.append('avatar', avatarFile);
+    }
+    const response = await api.put<User>(`/usuarios/${id}`, formData);
     return response.data;
   },
 
@@ -39,16 +49,6 @@ export const usersService = {
     const formData = new FormData();
     formData.append('file', file);
     const response = await api.post<User>(`/usuarios/${id}/avatar`, formData);
-    return response.data;
-  },
-
-  createWithAvatar: async (user: UserRequest, avatarFile?: File): Promise<User> => {
-    const formData = new FormData();
-    formData.append('usuario', JSON.stringify(user));
-    if (avatarFile) {
-      formData.append('avatar', avatarFile);
-    }
-    const response = await api.post<User>('/usuarios', formData);
     return response.data;
   },
 };

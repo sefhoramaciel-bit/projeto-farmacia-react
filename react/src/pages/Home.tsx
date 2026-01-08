@@ -14,32 +14,40 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    gerarEcarregarAlertas();
+    loadAlerts();
   }, []);
-
-  const gerarEcarregarAlertas = async () => {
-    try {
-      await alertsService.gerarAlertas();
-      loadAlerts();
-    } catch (err) {
-      console.error('Error generating alerts:', err);
-      loadAlerts();
-    }
-  };
 
   const loadAlerts = async () => {
     setIsLoading(true);
     try {
+      console.log('🔍 Carregando alertas...');
+      
       const [lowStock, expiringSoon, expired] = await Promise.all([
         alertsService.getEstoqueBaixo(),
         alertsService.getValidadeProxima(),
         alertsService.getValidadeVencida(),
       ]);
+      
+      console.log('📦 Alertas de estoque baixo recebidos:', lowStock);
+      console.log('⏰ Alertas de validade próxima recebidos:', expiringSoon);
+      console.log('❌ Alertas de validade vencida recebidos:', expired);
+      
+      // Verifica se os alertas estão marcados como lidos
+      lowStock.forEach((alerta: Alert, index: number) => {
+        console.log(`   [${index}] ${alerta.medicamentoNome}: lido=${alerta.lido}, tipo=${alerta.tipo}, mensagem=${alerta.mensagem}`);
+      });
+      
       setLowStockAlerts(lowStock);
       setExpiringSoonAlerts(expiringSoon);
       setExpiredAlerts(expired);
+      
+      console.log('✅ Total de alertas:', {
+        estoqueBaixo: lowStock.length,
+        validadeProxima: expiringSoon.length,
+        validadeVencida: expired.length
+      });
     } catch (err) {
-      console.error('Error loading alerts:', err);
+      console.error('❌ Error loading alerts:', err);
     } finally {
       setIsLoading(false);
     }
